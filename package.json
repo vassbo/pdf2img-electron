@@ -1,7 +1,7 @@
 {
     "name": "pdf2img-electron",
-    "version": "1.0.0",
-    "description": "Simple & lightweight way to convert PDF to image natively with Electron.",
+    "version": "1.1.0",
+    "description": "A simple & lightweight way to convert PDF to image natively with Electron.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
@@ -18,7 +18,7 @@
         "image",
         "electron"
     ],
-    "author": "Vassbo",
+    "author": "vassbo",
     "license": "ISC",
     "bugs": {
         "url": "https://github.com/vassbo/pdf2img-electron/issues"

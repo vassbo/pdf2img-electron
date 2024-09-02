@@ -7,7 +7,7 @@ export type Viewports = Size[]
 export type PdfContent = { name: string; pages: number; viewports: Viewports }
 export type ImageTypes = "bitmap" | "png" | "jpeg" | "dataURL"
 
-interface MainReturn {
+export interface ReturnDataPDF {
     name: string
     pages: number
     viewports: Viewports
@@ -25,6 +25,8 @@ interface ConverterOptionsInput {
     scale?: number // 0.25-5 (1)
     page?: number
     pages?: number[]
+    timeout?: number
+    logging?: boolean
 }
 export interface ConverterOptions extends ConverterOptionsInput {
     scale: number
@@ -36,7 +38,7 @@ export interface ConverterOptions extends ConverterOptionsInput {
  * @param filePath The file path to the PDF file
  * @returns If the promise succeeds it returns an object with PDF data/actions.
  */
-function pdf(filePath: string): MainReturn {
+function pdf(filePath: string): ReturnDataPDF {
     // check if valid pdf extension
     if (!filePath.match(/\.pdf$/i)) throw new Error("Invalid file path. Extension does not end with .pdf")
 
@@ -81,7 +83,7 @@ function pdf(filePath: string): MainReturn {
                 } catch (err) {
                     reject(err)
                 }
-            }, 50)
+            }, 200)
         })
 
         function checkOptions(): string | null {

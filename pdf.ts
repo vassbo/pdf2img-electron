@@ -8,7 +8,6 @@ export function getPdfContent(pdfPath: string): PdfContent {
 
     const pageMatches = pdfData.match(/\/Type\s*\/Page[^s]/g) || []
     const mediaBoxMatches = pdfData.match(/\/MediaBox\s*\[(.*?)\]/g) || []
-    // console.log(pageMatches, mediaBoxMatches)
 
     let viewports: Viewports = []
     for (let i = 0; i < mediaBoxMatches.length; i++) {
@@ -16,8 +15,14 @@ export function getPdfContent(pdfPath: string): PdfContent {
         if (dimensions) viewports.push(dimensions)
     }
 
-    // pages might be double the actual mediabox size, but in cases where pages is less than mediabox, use that count
+    // pages might be wrongly double the actual mediabox size,
+    // but in cases where pages is less than mediabox or not double, use that count
     if (pageMatches.length < viewports.length) viewports = viewports.slice(0, pageMatches.length)
+    else if (pageMatches.length > viewports.length && pageMatches.length !== viewports.length * 2) {
+        ;[...Array(pageMatches.length - viewports.length)].forEach(() => {
+            viewports.push(viewports[0])
+        })
+    }
 
     return { name: basename(pdfPath, ".pdf"), pages: viewports.length, viewports }
 }

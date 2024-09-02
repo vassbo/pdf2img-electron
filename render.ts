@@ -1,8 +1,11 @@
 import { BrowserWindow, NativeImage, Rectangle } from "electron"
 import { ConverterOptions, ImageTypes, PdfContent } from "."
 
+const logId = "pdf2img-electron"
+
 export function initRendering(filePath: string, content: PdfContent, options: ConverterOptions, window: BrowserWindow, type: ImageTypes): Promise<Buffer[] | string[]> {
     const PAGES = options.pages.length ? options.pages : [...Array(content.pages)].map((_, i) => i)
+    if (options.logging !== false) console.log(`${logId}: Starting rendering of ${PAGES.length} pages.`)
     let pageIndex = 0
     let buffers: Buffer[] | string[] = []
 
@@ -25,14 +28,14 @@ export function initRendering(filePath: string, content: PdfContent, options: Co
         window.webContents.on("did-finish-load", async () => {
             if (!reloaded) return
 
-            console.time("pdf2img-electron: Rendered page " + (pageIndex + 1) + " in")
+            if (options.logging !== false) console.time(`${logId}: Rendered page ${pageIndex + 1} in`)
             try {
-                await pdfHasLoaded()
+                await pdfHasLoaded(options.timeout || 70000)
             } catch (err) {
                 reject(err)
                 return
             }
-            console.timeEnd("pdf2img-electron: Rendered page " + (pageIndex + 1) + " in")
+            if (options.logging !== false) console.timeEnd(`${logId}: Rendered page ${pageIndex + 1} in`)
 
             // give time for content scroll/fit after load (might be able to do some optimizations here)
             let extraDelay = options.scale > 1 ? options.scale * 400 : options.scale < 1 ? 800 : 200
@@ -97,6 +100,7 @@ export function initRendering(filePath: string, content: PdfContent, options: Co
         }
 
         function finish() {
+            if (options.logging !== false) console.log(`${logId}: Done!`)
             resolve(buffers)
         }
     })
@@ -118,13 +122,12 @@ export function initRendering(filePath: string, content: PdfContent, options: Co
     }
 
     // check that there is any content as PDF loads after content has loaded
-    function pdfHasLoaded() {
+    function pdfHasLoaded(timeoutDuration: number) {
         const CHECK_INTERVAL = 150
-        const LOAD_TIMEOUT = 90000
 
         return new Promise((resolve, reject) => {
             let nextActionTimeout = setTimeout(checkContent, CHECK_INTERVAL)
-            let timedoutTimeout = setTimeout(timedout, LOAD_TIMEOUT)
+            let timedoutTimeout = setTimeout(timedout, timeoutDuration)
 
             async function checkContent() {
                 const capture = await getBitmap()
