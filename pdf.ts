@@ -1,6 +1,6 @@
 import fs from "fs"
 import { basename } from "path"
-import { PdfContent, Size, Viewports } from "."
+import { PdfContent, PdfMetadata, Size, Viewports } from "."
 
 export function getPdfContent(pdfPath: string): PdfContent {
     let pdfData: string
@@ -8,6 +8,7 @@ export function getPdfContent(pdfPath: string): PdfContent {
 
     const pageMatches = pdfData.match(/\/Type\s*\/Page[^s]/g) || []
     const mediaBoxMatches = pdfData.match(/\/MediaBox\s*\[(.*?)\]/g) || []
+    const metadata = getMetadata()
 
     let viewports: Viewports = []
     for (let i = 0; i < mediaBoxMatches.length; i++) {
@@ -16,7 +17,7 @@ export function getPdfContent(pdfPath: string): PdfContent {
     }
 
     // pages might be wrongly double the actual mediabox size,
-    // but in cases where pages is less than mediabox or not double, use that count
+    // but in cases where pages are less than mediabox or not double, use that count
     if (pageMatches.length < viewports.length) viewports = viewports.slice(0, pageMatches.length)
     else if (pageMatches.length > viewports.length && pageMatches.length !== viewports.length * 2) {
         ;[...Array(pageMatches.length - viewports.length)].forEach(() => {
@@ -24,7 +25,22 @@ export function getPdfContent(pdfPath: string): PdfContent {
         })
     }
 
-    return { name: basename(pdfPath, ".pdf"), pages: viewports.length, viewports }
+    return { name: basename(pdfPath, ".pdf"), pages: viewports.length, viewports, metadata }
+
+    function getMetadata() {
+        let metadata: any = {}
+        const keys = ["Title", "Subject", "Author", "Keywords", "Creator", "Producer", "CreationDate", "ModDate"]
+
+        keys.forEach((key) => {
+            let reg = new RegExp(`\\/${key}\\s*\\((.*?)\\)`)
+            const metaValue = pdfData.match(reg)?.[1] || ""
+            const objectKey = key[0].toLowerCase() + key.slice(1)
+
+            metadata[objectKey] = metaValue
+        })
+
+        return metadata as PdfMetadata
+    }
 }
 
 function getMediaBoxDimensions(mediaBox: string): Size | null {

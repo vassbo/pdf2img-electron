@@ -1,25 +1,29 @@
-import { app, BrowserWindow } from "electron"
+import { app, BrowserWindow, NativeImage } from "electron"
 import { getPdfContent } from "./pdf"
 import { initRendering } from "./render"
 
 export type Size = { width: number; height: number }
 export type Viewports = Size[]
-export type PdfContent = { name: string; pages: number; viewports: Viewports }
-export type ImageTypes = "bitmap" | "png" | "jpeg" | "dataURL"
+export type PdfContent = { name: string; pages: number; viewports: Viewports; metadata: PdfMetadata }
+export type ImageTypes = "bitmap" | "png" | "jpeg" | "dataURL" | "native"
+export type PdfMetadata = { title: string; subject: string; author: string; keywords: string; creator: string; producer: string; creationDate: string; modDate: string }
 
 export interface ReturnDataPDF {
     name: string
     pages: number
     viewports: Viewports
+    metadata: PdfMetadata
     toBitmap: ToBitmap
     toPNG: ToPNG
     toJPEG: ToJPEG
     toDataURL: ToDataURL
+    toNativeImage: ToNativeImage
 }
 type ToBitmap = (options?: ConverterOptionsInput) => Promise<Buffer[]>
 type ToPNG = (options?: ConverterOptionsInput) => Promise<Buffer[]>
 type ToJPEG = (options?: ConverterOptionsInput) => Promise<Buffer[]>
 type ToDataURL = (options?: ConverterOptionsInput) => Promise<string[]>
+type ToNativeImage = (options?: ConverterOptionsInput) => Promise<NativeImage[]>
 
 interface ConverterOptionsInput {
     scale?: number // 0.25-5 (1)
@@ -43,7 +47,7 @@ function pdf(filePath: string): ReturnDataPDF {
     if (!filePath.match(/\.pdf$/i)) throw new Error("Invalid file path. Extension does not end with .pdf")
 
     let content: PdfContent = getPdfContent(filePath)
-    return { ...content, toBitmap, toPNG, toJPEG, toDataURL }
+    return { ...content, toBitmap, toPNG, toJPEG, toDataURL, toNativeImage }
 
     async function toBitmap(options?: ConverterOptionsInput) {
         return (await convert(options, "bitmap")) as Buffer[]
@@ -61,7 +65,11 @@ function pdf(filePath: string): ReturnDataPDF {
         return (await convert(options, "dataURL")) as string[]
     }
 
-    function convert(options: ConverterOptionsInput = {}, type: ImageTypes): Promise<Buffer[] | string[]> {
+    async function toNativeImage(options?: ConverterOptionsInput) {
+        return (await convert(options, "native")) as NativeImage[]
+    }
+
+    function convert(options: ConverterOptionsInput = {}, type: ImageTypes): Promise<Buffer[] | string[] | NativeImage[]> {
         return new Promise(async (resolve, reject) => {
             const invalidOptions = checkOptions()
             if (invalidOptions) reject(invalidOptions)

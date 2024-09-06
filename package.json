@@ -1,6 +1,6 @@
 {
     "name": "pdf2img-electron",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "A simple & lightweight way to convert PDF to image natively with Electron.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",

@@ -11,6 +11,7 @@ async function test() {
     console.log("Name: " + PDF.name)
     console.log("Pages: " + PDF.pages)
     console.log("Viewports: " + JSON.stringify(PDF.viewports))
+    console.log("Metadata: " + JSON.stringify(PDF.metadata))
 
     const sizes = {
         normal: 1,

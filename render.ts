@@ -18,6 +18,11 @@ export function initRendering(filePath: string, content: PdfContent, options: Co
     // this is needed to allow page to properly scroll into view
     const SCROLL_MARGIN = widestPage * options.scale + 200
 
+    // fixed sizes in pixels
+    const SCROLLBAR_WIDTH = content.pages > 1 ? 17 : 0
+    const TOP_MARGIN = 3 * options.scale
+    const BOTTOM_MARGIN = 5.5 * options.scale
+
     return new Promise((resolve, reject) => {
         if (widestPage === 0) {
             reject("Could not get page sizes.")
@@ -48,17 +53,12 @@ export function initRendering(filePath: string, content: PdfContent, options: Co
         setNewContent()
 
         function windowLoaded() {
-            // fixed sizes in pixels
-            const SCROLLBAR_WIDTH = content.pages > 1 ? 17 : 0
-            const TOP_MARGIN = 3 * options.scale
-            const BOTTOM_MARGIN = 5.5 * options.scale
-
             const windowSize = window.getBounds()
             const contentWidth = (windowSize.height - TOP_MARGIN - BOTTOM_MARGIN) * getAspectRatio()
 
             const y = TOP_MARGIN
             const height = windowSize.height - y - BOTTOM_MARGIN
-            const x = windowSize.width / 2 - contentWidth / 2 - SCROLLBAR_WIDTH / 2
+            const x = (windowSize.width - contentWidth - SCROLLBAR_WIDTH) * 0.5 // = windowSize.width / 2 - contentWidth / 2 - SCROLLBAR_WIDTH / 2
             const width = contentWidth
 
             let size = { x, y, width, height }
@@ -82,8 +82,9 @@ export function initRendering(filePath: string, content: PdfContent, options: Co
             if (type === "png") return img.toPNG()
             if (type === "jpeg") return img.toJPEG(1)
             if (type === "dataURL") return img.toDataURL()
+            if (type === "native") return img
 
-            reject("Incorrect image type:" + type)
+            reject("Incorrect image type: " + type)
             return ""
         }
 

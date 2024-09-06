@@ -23,10 +23,13 @@ const PDF = pdf("file.pdf")
 PDF.name // -> returns the file name of the PDF
 PDF.pages // -> returns the page count, e.g. 5
 PDF.viewports // -> returns an array with the page sizes, e.g. [{ width: 595, height: 842 }]
+PDF.metadata // -> returns an object with metadata from the PDF: title, author, etc.
+
 PDF.toBitmap() // -> returns a promise with an array of Bitmap buffers
 PDF.toPNG() // -> returns a promise with an array of PNG buffers
 PDF.toJPEG() // -> returns a promise with an array of JPEG buffers
 PDF.toDataURL() // -> returns a promise with an array of Data URL strings
+PDF.toNativeImage() // -> returns a promise with an array of Electrons NativeImage
 ```
 
 ### Options
@@ -36,7 +39,7 @@ In the converter functions (e.g. `toPNG()`) you can pass some optional params:
 -   `scale`: A number between 0.25 - 5 [Default: 1]
 -   `page`: A number to only capture one specific page
 -   `pages`: A number array of specific pages
--   `timeout`: A number to specify the PDF load timeout in ms [Default: 70000]
+-   `timeout`: A number to specify the PDF page load timeout in ms [Default: 70000]
 -   `logging`: A boolean to enable/disable log feedback [Default: true]
 
 ## PDF to PNG Example
