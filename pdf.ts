@@ -7,25 +7,42 @@ export function getPdfContent(pdfPath: string): PdfContent {
     pdfData = fs.readFileSync(pdfPath, "utf8")
 
     const pageMatches = pdfData.match(/\/Type\s*\/Page[^s]/g) || []
-    const mediaBoxMatches = pdfData.match(/\/MediaBox\s*\[(.*?)\]/g) || []
+    const boxMatch = getBoxes()
     const metadata = getMetadata()
 
     let viewports: Viewports = []
-    for (let i = 0; i < mediaBoxMatches.length; i++) {
-        let dimensions = getMediaBoxDimensions(mediaBoxMatches[i])
+    for (let i = 0; i < boxMatch.length; i++) {
+        let dimensions = getMediaBoxDimensions(boxMatch[i])
         if (dimensions) viewports.push(dimensions)
     }
 
     // pages might be wrongly double the actual mediabox size,
     // but in cases where pages are less than mediabox or not double, use that count
-    if (pageMatches.length < viewports.length) viewports = viewports.slice(0, pageMatches.length)
-    else if (pageMatches.length > viewports.length && pageMatches.length !== viewports.length * 2) {
+    if (pageMatches.length && pageMatches.length < viewports.length) viewports = viewports.slice(0, pageMatches.length)
+    else if (viewports.length && pageMatches.length > viewports.length && pageMatches.length !== viewports.length * 2) {
         ;[...Array(pageMatches.length - viewports.length)].forEach(() => {
             viewports.push(viewports[0])
         })
     }
 
     return { name: basename(pdfPath, ".pdf"), pages: viewports.length, viewports, metadata }
+
+    function getBoxes() {
+        const boxTypes = ["MediaBox", "CropBox", "BleedBox", "TrimBox", "ArtBox"]
+
+        for (const type of boxTypes) {
+            const regex = new RegExp(`/${type}\\s*\\[([^\\]]+)\\]`, "g")
+            let boxes: string[] = []
+            let match
+            while ((match = regex.exec(pdfData)) !== null) {
+                boxes.push(match[0].replace(/\n/g, " "))
+            }
+
+            if (boxes.length) return boxes
+        }
+
+        return []
+    }
 
     function getMetadata() {
         let metadata: any = {}
