@@ -5,20 +5,32 @@ import fs from "fs"
 const TEST_PATH = path.join(__dirname, "tests")
 const OUTPUT_PATH = path.join(TEST_PATH, "output")
 
-async function test() {
-    const PDF = pdf(path.join(TEST_PATH, "test.pdf"))
+const sizes = {
+    // small: 0.25,
+    normal: 1
+    // large: 2,
+    // huge: 5,
+}
 
+async function test() {
+    const files = fs.readdirSync(TEST_PATH)
+
+    for (let file of files) {
+        if (file.endsWith(".pdf")) await renderPdf(file)
+    }
+
+    console.log("DONE!")
+    process.exit()
+}
+
+async function renderPdf(file: string) {
+    const PDF = pdf(path.join(TEST_PATH, file))
+
+    console.log(">>> " + file)
     console.log("Name: " + PDF.name)
     console.log("Pages: " + PDF.pages)
     console.log("Viewports: " + JSON.stringify(PDF.viewports))
     console.log("Metadata: " + JSON.stringify(PDF.metadata))
-
-    const sizes = {
-        normal: 1,
-        large: 2,
-        // small: 0.25,
-        // huge: 5,
-    }
 
     for (let i = 0; i < Object.keys(sizes).length; i++) {
         const [name, size] = Object.entries(sizes)[i]
@@ -26,13 +38,10 @@ async function test() {
 
         for (let i = 0; i < PNG.length; i++) {
             const image = PNG[i]
-            const p = path.join(OUTPUT_PATH, i + 1 + "_" + name + ".png")
+            const p = path.join(OUTPUT_PATH, `${file}_${i + 1}_${name}.png`)
             fs.writeFileSync(p, image)
         }
     }
-
-    console.log("DONE!")
-    process.exit()
 }
 
 test()

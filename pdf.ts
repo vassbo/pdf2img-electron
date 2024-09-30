@@ -7,6 +7,7 @@ export function getPdfContent(pdfPath: string): PdfContent {
     pdfData = fs.readFileSync(pdfPath, "utf8")
 
     const pageMatches = pdfData.match(/\/Type\s*\/Page[^s]/g) || []
+    const pageCount = getPagesCount()
     const boxMatch = getBoxes()
     const metadata = getMetadata()
 
@@ -25,7 +26,21 @@ export function getPdfContent(pdfPath: string): PdfContent {
         })
     }
 
+    // some large PDFs have multiple portrait pages combined to one landscape
+    if (pageCount && pageCount < viewports.length) {
+        let newViewports = []
+        for (let i = 0; i < pageCount; i += 2) {
+            newViewports.push({ width: viewports[i].width + (viewports[i + 1]?.width || 0), height: viewports[i].height })
+        }
+        viewports = newViewports
+    }
+
     return { name: basename(pdfPath, ".pdf"), pages: viewports.length, viewports, metadata }
+
+    function getPagesCount() {
+        const countMatch = pdfData.match(/\/Count\s+(\d+)/)
+        return countMatch ? parseInt(countMatch[1], 10) : 0
+    }
 
     function getBoxes() {
         const boxTypes = ["MediaBox", "CropBox", "BleedBox", "TrimBox", "ArtBox"]
@@ -53,7 +68,7 @@ export function getPdfContent(pdfPath: string): PdfContent {
             const metaValue = pdfData.match(reg)?.[1] || ""
             const objectKey = key[0].toLowerCase() + key.slice(1)
 
-            metadata[objectKey] = metaValue
+            metadata[objectKey] = metaValue.replace(/\\000|\u0000/g, "")
         })
 
         return metadata as PdfMetadata
